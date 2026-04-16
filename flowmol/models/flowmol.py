@@ -233,24 +233,34 @@ class FlowMol(pl.LightningModule):
         # compute epoch as a float
         epoch_exact = self.current_epoch + batch_idx/self.batches_per_epoch
         self.last_epoch_exact = epoch_exact
+        
+        # print(f'batch_idx: {batch_idx}, batch_size: {g.batch_size}')
+        # n_graphs = g.batch_size
+        # n_nodes_each = g.batch_num_nodes()
+        # n_edges_each = g.batch_num_edges()
+        # if batch_idx < 5:
+        #     print(f"[train] batch_idx={batch_idx}, n_graphs={n_graphs}, "
+        #         f"total_nodes={g.num_nodes()}, total_edges={g.num_edges()}")
+        #     print(f"  nodes_per_graph={n_nodes_each.tolist()}")
+        #     print(f"  edges_per_graph={n_edges_each.tolist()}")
 
         # update the learning rate
         self.lr_scheduler.step_lr(epoch_exact)
 
-        # sample and evaluate molecules if necessary
-        if epoch_exact - self.last_sample_marker >= self.sample_interval:
-            self.last_sample_marker = epoch_exact
-            self.eval()
-            with torch.no_grad():
-                sampled_molecules = self.sample_random_sizes(n_molecules=self.n_mols_to_sample, device=g.device)
-            self.train()
-            sampled_mols_metrics = self.sample_analyzer.analyze(
-                sampled_molecules, 
-                energy_div=False, 
-                functional_validity=True,
-                posebusters=True,
-            )
-            self.log_dict(sampled_mols_metrics)
+        # # sample and evaluate molecules if necessary
+        # if epoch_exact - self.last_sample_marker >= self.sample_interval:
+        #     self.last_sample_marker = epoch_exact
+        #     self.eval()
+        #     with torch.no_grad():
+        #         sampled_molecules = self.sample_random_sizes(n_molecules=self.n_mols_to_sample, device=g.device)
+        #     self.train()
+        #     sampled_mols_metrics = self.sample_analyzer.analyze(
+        #         sampled_molecules, 
+        #         energy_div=False, 
+        #         functional_validity=True,
+        #         posebusters=True,
+        #     )
+        #     self.log_dict(sampled_mols_metrics)
 
         # compute losses
         losses = self(g)

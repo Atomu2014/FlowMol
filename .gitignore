@@ -198,3 +198,4 @@ cython_debug/
 
 **/checkpoints/*
 **/samples/*
+**/trained_models/*

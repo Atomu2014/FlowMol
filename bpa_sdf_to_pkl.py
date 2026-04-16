@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/sdf_split.pkl"),
+        default=Path("data/sdf_raw.pkl"),
         help="Output pickle path.",
     )
     parser.add_argument(

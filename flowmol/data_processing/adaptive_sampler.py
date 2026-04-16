@@ -28,44 +28,51 @@ class AdaptiveEdgeSampler(BatchSampler):
             self.frac_start = 0
             self.frac_end = 1
 
-        self.samples_per_epoch = len(self.dataset) // self.num_replicas
-        # edges_per_sample = (44*(1+self.dataset.fake_atom_p/2))**2
-        edges_per_sample = 3000 # manually computed the expectation of the square of number of atoms in training data, account for fake atoms
-        samples_per_batch = edges_per_batch / edges_per_sample
-        self.batches_per_epoch = self.samples_per_epoch // samples_per_batch
-        self.batches_per_epoch = int(self.batches_per_epoch)
-        
-
-    def setup_queue(self):
+        # Compute local shard once; each worker consumes its shard exactly once per epoch.
         start_idx = int(self.frac_start * len(self.dataset))
         end_idx = int(self.frac_end * len(self.dataset))
-        indices = torch.arange(start_idx, end_idx)
-        self.sample_queue = indices[torch.randperm(len(indices))]
-        self.queue_idx = 0
+        self.local_indices = torch.arange(start_idx, end_idx)
+        self.samples_per_epoch = len(self.local_indices)
 
-    def get_next_batch(self):
+    def setup_queue(self):
+        if len(self.local_indices) == 0:
+            self.sample_queue = torch.empty(0, dtype=torch.long)
+            return
+        self.sample_queue = self.local_indices[torch.randperm(len(self.local_indices))]
 
+    def get_next_batch(self, queue_idx):
+        # Build one dynamic batch from queue[queue_idx:], stopping when edge budget is reached.
+        # Always include at least one graph per batch.
         batch_idxs = []
         n_edges = 0
-        while n_edges < self.edges_per_batch:
-            idx = self.sample_queue[self.queue_idx]
-            n_edges += self.dataset.n_edges_per_graph[idx]
+        while queue_idx < len(self.sample_queue):
+            idx = self.sample_queue[queue_idx]
+            idx_edges = int(self.dataset.n_edges_per_graph[idx])
+
+            if len(batch_idxs) > 0 and (n_edges + idx_edges) > self.edges_per_batch:
+                break
+
             batch_idxs.append(idx)
-            self.queue_idx += 1
+            n_edges += idx_edges
+            queue_idx += 1
 
-            if self.queue_idx >= len(self.sample_queue):
-                self.setup_queue()
-
-        return batch_idxs
-
+        return batch_idxs, queue_idx
 
     def __iter__(self):
-
         self.setup_queue()
-        for _ in range(self.batches_per_epoch):
-            next_batch = self.get_next_batch()
+        queue_idx = 0
+        while queue_idx < len(self.sample_queue):
+            next_batch, queue_idx = self.get_next_batch(queue_idx)
+            if len(next_batch) == 0:
+                break
             yield next_batch
 
-
     def __len__(self):
-        return self.batches_per_epoch
+        # Dynamic batching means exact batch count is data/order dependent.
+        # Return a deterministic estimate for progress bars.
+        if self.samples_per_epoch == 0:
+            return 0
+        mean_edges = float(self.dataset.n_edges_per_graph[self.local_indices].float().mean())
+        mean_edges = max(mean_edges, 1.0)
+        est_batches = int((self.samples_per_epoch * mean_edges) / max(self.edges_per_batch, 1))
+        return max(est_batches, 1)

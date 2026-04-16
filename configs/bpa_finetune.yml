@@ -1,5 +1,5 @@
 training:
-  output_dir: runs/runs_fm3/
+  output_dir: runs/bpa_finetune/
   batch_size: 12
   num_workers: 6
   ema_decay: 0
@@ -7,23 +7,23 @@ training:
   trainer_args:
     max_epochs: 20
     accelerator: gpu
-    devices: 4
+    devices: 1
     num_nodes: 1
     strategy: ddp_find_unused_parameters_true
     accumulate_grad_batches: 1
-    limit_val_batches: 0.002
+    limit_val_batches: 1
 
   evaluation:
-    mols_to_sample: 100 # how many molecules to sample during evaluation
-    sample_interval: 0.05 # how often to sample molecules during training, measured in epochs
-    val_loss_interval: 0.05 # how often to compute validation set loss during training, measured in epochs
+    mols_to_sample: 10 # how many molecules to sample during evaluation
+    sample_interval: 1.0 # how often to sample molecules during training, measured in epochs
+    val_loss_interval: 1.0 # how often to compute validation set loss during training, measured in epochs
 
 wandb:
   project: mol-fm
-  entity: iandunn
+  entity: kevinkune
   group:
   name: fm3_repeat
-  mode: disabled # can be disabled, online, offline
+  mode: online # can be disabled, online, offline
 
 lr_scheduler:
   # to turn off warmup and restarts, set both warmup_length and restart_interval to 0
@@ -34,8 +34,8 @@ lr_scheduler:
   weight_decay: 1.0e-12
 
 dataset:
-  raw_data_dir: data/bpa_sdf/
-  processed_data_dir: data/bpa_full_kekulized_test/
+  raw_data_dir: data/bpa_raw/
+  processed_data_dir: data/bpa_full_kekulized/
   # atom_map: ['C', 'H', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'As', 'Hg', 'Bi', 'Se']
   atom_map: ['C', 'H', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I'] # I removed As, Hg, Bi, Se. As, Hg, and Se are not in the dataset, and Bi is virtually not in the dataset.. p(a = Bi) = 1.0e-8
   dataset_name: bpa # only geom is supported for now
