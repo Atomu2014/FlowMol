@@ -59,6 +59,15 @@ def parse_args():
 
     p.add_argument('--overwrite', action='store_true', help='overwrite existing files')
     p.add_argument('--save_interval', type=int, default=5, help='number of molecules after which to save processed data')
+    p.add_argument(
+        '--overfit_1sample',
+        action='store_true',
+        help=(
+            'Enable overfit-1sample preprocessing mode. '
+            'For train split, replace all entries with the first entry; '
+            'for val/test splits, keep only the first entry.'
+        ),
+    )
 
     # p.add_argument('--dataset_size', type=int, default=None, help='number of molecules in dataset, only used to truncate dataset for debugging')
 
@@ -109,6 +118,20 @@ def build_explicit_arom_valency_dict(unique_valencies):
         unique_valencies_dict[atom_type][charge].append((n_arom_bonds, non_arom_valency))
     return unique_valencies_dict
 
+def build_single_sample_data_dict(data_dict: dict, sample_idx: int = 0) -> dict:
+    node_start, node_end = data_dict['node_idx_array'][sample_idx].tolist()
+    edge_start, edge_end = data_dict['edge_idx_array'][sample_idx].tolist()
+    return {
+        'smiles': [data_dict['smiles'][sample_idx]],
+        'positions': data_dict['positions'][node_start:node_end].clone(),
+        'atom_types': data_dict['atom_types'][node_start:node_end].clone(),
+        'atom_charges': data_dict['atom_charges'][node_start:node_end].clone(),
+        'bond_types': data_dict['bond_types'][edge_start:edge_end].clone(),
+        'bond_idxs': data_dict['bond_idxs'][edge_start:edge_end].clone(),
+        'node_idx_array': torch.tensor([[0, node_end - node_start]], dtype=torch.int32),
+        'edge_idx_array': torch.tensor([[0, edge_end - edge_start]], dtype=torch.int32),
+    }
+
 
 
 if __name__ == "__main__":
@@ -150,6 +173,35 @@ if __name__ == "__main__":
     # load the raw data
     with open(raw_data_file, 'rb') as f:
         raw_data = pickle.load(f)
+    if len(raw_data) == 0:
+        raise ValueError(f'input split file is empty: {raw_data_file}')
+
+    if args.overfit_1sample:
+        split_name = args.split_file.stem
+        first_smiles, first_conformers = raw_data[0]
+        if len(first_conformers) == 0:
+            raise ValueError('overfit_1sample requires the first entry to contain at least one conformer')
+        first_conformer = first_conformers[0]
+
+        if split_name == 'train_data':
+            n_entries = len(raw_data)
+            # Strict mode: every entry contains exactly the same single conformer.
+            raw_data = [(first_smiles, [Chem.Mol(first_conformer)]) for _ in range(n_entries)]
+            print(
+                'overfit_1sample enabled (strict): replaced train split with first '
+                f'conformer repeated {n_entries} times'
+            )
+        elif split_name in ['val_data', 'test_data']:
+            raw_data = [(first_smiles, [Chem.Mol(first_conformer)])]
+            print(
+                'overfit_1sample enabled (strict): reduced '
+                f'{split_name} to one entry with the first conformer only'
+            )
+        else:
+            print(
+                f'overfit_1sample enabled but split name "{split_name}" is not train_data/val_data/test_data; '
+                'keeping data unchanged'
+            )
 
     # determine if we are processing the entire dataset or just a subset
     if args.start_idx == 0 and args.end_idx == np.inf:
@@ -311,6 +363,15 @@ if __name__ == "__main__":
 
     # save the data
     torch.save(data_dict, output_file)
+
+    # In overfit_1sample mode with train_data input, also materialize 1-sample val/test processed files
+    # so downstream training can run without separately processing val/test split files.
+    if args.overfit_1sample and args.split_file.stem == 'train_data':
+        single_sample_data = build_single_sample_data_dict(data_dict, sample_idx=0)
+        for split_name in ['val_data', 'test_data']:
+            split_output_file = output_dir / f'{split_name}_processed.pt'
+            torch.save(single_sample_data, split_output_file)
+            print(f'overfit_1sample: wrote {split_output_file} with 1 sample')
 
     # compute the marginal distribution of atom types, p(a)
     p_a = all_atom_types.sum(dim=0)

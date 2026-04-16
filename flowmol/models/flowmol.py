@@ -76,8 +76,7 @@ class FlowMol(pl.LightningModule):
         self.fake_atom_p = fake_atom_p
         self.fake_atom_std = fake_atom_std
         self.fake_atoms = fake_atom_p > 0
-        if self.fake_atoms:
-            self.n_atom_types += 1
+        self.n_atom_types += 1
 
         if self.weight_ae and parameterization == 'vector-field':
             raise NotImplementedError('weighting the atom and edge losses is not yet implemented for the vector-field parameterization')

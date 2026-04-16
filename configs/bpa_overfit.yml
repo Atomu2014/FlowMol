@@ -1,5 +1,5 @@
 training:
-  output_dir: runs/bpa_finetune/
+  output_dir: runs/bpa_overfit/
   batch_size: 12
   num_workers: 6
   ema_decay: 0
@@ -22,7 +22,7 @@ wandb:
   project: mol-fm
   entity: kevinkune
   group:
-  name: ep100_distort
+  name: overfit_distort
   mode: online # can be disabled, online, offline
 
 lr_scheduler:
@@ -35,7 +35,7 @@ lr_scheduler:
 
 dataset:
   raw_data_dir: data/bpa_raw/
-  processed_data_dir: data/bpa_full_kekulized/
+  processed_data_dir: data/bpa_overfit/
   # atom_map: ['C', 'H', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'As', 'Hg', 'Bi', 'Se']
   atom_map: ['C', 'H', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I'] # I removed As, Hg, Bi, Se. As, Hg, and Se are not in the dataset, and Bi is virtually not in the dataset.. p(a = Bi) = 1.0e-8
   dataset_name: bpa # only geom is supported for now
