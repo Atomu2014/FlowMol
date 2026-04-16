@@ -17,8 +17,8 @@ import numpy as np
 def parse_args():
     p = argparse.ArgumentParser(description='Testing Script')
     p.add_argument('--model_dir', type=Path, help='Path to model directory', default=None)
-    p.add_argument('--checkpoint', type=Path, help='Path to checkpoint file', default=None)
-    p.add_argument('--output_file', type=Path, help='Path to output file', default=None)
+    p.add_argument('--checkpoint', type=Path, help='Path to checkpoint file', default='flowmol/trained_models/flowmol3_bpa/checkpoints/last-v1.ckpt')
+    p.add_argument('--output_file', type=Path, help='Path to output file', default='flowmol/trained_models/flowmol3_bpa/samples/sampled_mols.sdf')
 
     p.add_argument('--n_mols', type=int, default=100, help='The number of molecules to generate.')
     p.add_argument('--n_atoms_per_mol', type=int, default=None, help="The number of atoms in every molecule. If None, the number of atoms will be sampled independently for each molecule from the training data distribution.")

@@ -53,7 +53,7 @@ class MoleculeDataset(torch.utils.data.Dataset):
         if self.prior_config['c']['type'] == 'c-given-a':
             self.prior_config['c']['kwargs']['p_c_given_a'] = p_c_given_a
 
-        if dataset_config['dataset_name'] in ['geom', 'qm9', 'geom_5conf']:
+        if dataset_config['dataset_name'] in ['geom', 'qm9', 'geom_5conf', 'bpa']:
             data_file = processed_data_dir / f'{split}_data_processed.pt'
         else:
             raise NotImplementedError('unsupported dataset_name')

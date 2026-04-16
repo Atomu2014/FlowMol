@@ -22,7 +22,7 @@ from flowmol.utils.ema import ExponentialMovingAverage
 def parse_args():
     p = argparse.ArgumentParser(description='Training Script')
     p.add_argument('--config', type=Path, default=None)
-    p.add_argument('--resume', type=Path, default=None, help='Path to run directory or checkpoint file to resume from')
+    p.add_argument('--resume', type=Path, default='flowmol/trained_models/flowmol3_bpa', help='Path to run directory or checkpoint file to resume from')
     p.add_argument('--seed-model', type=Path, default=None, help='Path to a model checkpoint to seed the model with')
 
     # create a boolean argument for whether or not this is a debug run
@@ -83,14 +83,14 @@ if __name__ == "__main__":
         wandb_config['name'] = 'debug_run'
 
     # if we are not resuming a run, generate a run_id
-    if args.resume is None:
-        run_id = wandb.util.generate_id()
-        wandb_config['id'] = run_id
-    else:
-        # we are resuming a run, so get the run_id from the resume file
-        run_id = config['resume']['run_id']
-        wandb_config['id'] = run_id
-        wandb_config['resume'] = 'must'
+    # if args.resume is None:
+    run_id = wandb.util.generate_id()
+    wandb_config['id'] = run_id
+    # else:
+    #     # we are resuming a run, so get the run_id from the resume file
+    #     run_id = config['resume']['run_id']
+    #     wandb_config['id'] = run_id
+    #     wandb_config['resume'] = 'must'
 
     # create the logging directory if it doesn't exist
     output_dir = Path(config['training']['output_dir'])

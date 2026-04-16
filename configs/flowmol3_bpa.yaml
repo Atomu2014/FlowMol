@@ -1,0 +1,118 @@
+checkpointing:
+  every_n_epochs: 1
+  monitor: val_total_loss
+  save_last: true
+  save_top_k: 6
+dataset:
+  atom_map:
+  - C
+  - H
+  - N
+  - O
+  - F
+  - P
+  - S
+  - Cl
+  - Br
+  - I
+  confs_per_mol: 
+  dataset_name: bpa
+  dataset_size: null
+  processed_data_dir: data/bpa_full_kekulized/
+  raw_data_dir: data/bpa_sdf/
+interpolant_scheduler:
+  schedule_type:
+    a: linear
+    c: linear
+    e: linear
+    x: linear
+lr_scheduler:
+  base_lr: 0.0001
+  restart_interval: 0
+  restart_type: linear
+  warmup_length: 0.0
+  weight_decay: 1.0e-12
+mol_fm:
+  distort_p: 0.2
+  explicit_aromaticity: false
+  fake_atom_p: 0.3
+  parameterization: ctmc
+  prior_config:
+    a:
+      align: false
+      kwargs: {}
+      type: ctmc
+    c:
+      align: false
+      kwargs: {}
+      type: ctmc
+    e:
+      align: false
+      kwargs: {}
+      type: ctmc
+    x:
+      align: true
+      kwargs:
+        std: 1.0
+      type: centered-normal
+  time_scaled_loss: true
+  total_loss_weights:
+    a: 0.4
+    c: 1.0
+    e: 2.0
+    x: 3.0
+resume:
+  run_id: jy50gie6
+training:
+  batch_size: 12
+  ema_decay: 0
+  evaluation:
+    mols_to_sample: 100
+    sample_interval: 0.05
+    val_loss_interval: 0.05
+  max_num_edges: 50000
+  num_workers: 6
+  output_dir: runs/runs_fm3/
+  trainer_args:
+    accelerator: gpu
+    accumulate_grad_batches: 1
+    devices: 1
+    limit_val_batches: 1
+    max_epochs: 60
+    num_nodes: 1
+    strategy: ddp_find_unused_parameters_true
+vector_field:
+  a_token_dim: 64
+  attention: false
+  c_token_dim: 64
+  convs_per_update: 1
+  e_token_dim: 64
+  high_confidence_threshold: 0.9
+  message_norm: sum
+  n_cp_feats: 4
+  n_expansion_gvps: 3
+  n_heads: 32
+  n_hidden_edge_feats: 128
+  n_hidden_scalars: 256
+  n_message_gvps: 3
+  n_molecule_updates: 6
+  n_recycles: 1
+  n_update_gvps: 3
+  n_vec_channels: 32
+  rbf_dim: 32
+  rbf_dmax: 10
+  s_message_dim: null
+  self_conditioning: true
+  separate_mol_updaters: true
+  stochasticity: 30.0
+  time_embedding_dim: 64
+  update_edge_w_distance: true
+  v_message_dim: null
+wandb:
+  entity: kevinkune
+  group: null
+  id: jy50gie6
+  mode: online
+  name: fm3
+  project: mol-fm
+  save_dir: runs/runs_fm3

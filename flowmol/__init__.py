@@ -4,13 +4,14 @@ import subprocess
 
 pretrained_model_names = [
     'flowmol3',
+    'flowmol3_bpa',
     'fm3_nofa',
     'fm3_nodistort',
     'fm3_nosc',
     'fm3_none'
 ]
 
-def load_pretrained(model_name: str = 'flowmol3') -> FlowMol:
+def load_pretrained(model_name: str = 'flowmol3', ckpt_name: str = 'last') -> FlowMol:
     """Load one of the pre-trained models by name.
 
     Args:
@@ -37,7 +38,7 @@ def load_pretrained(model_name: str = 'flowmol3') -> FlowMol:
     else:
         load_kwargs = {}
     
-    ckpt_path = model_dir / 'checkpoints' / 'last.ckpt'
+    ckpt_path = model_dir / 'checkpoints' / f'{ckpt_name}.ckpt'
     model = FlowMol.load_from_checkpoint(ckpt_path, **load_kwargs)
 
     return model
